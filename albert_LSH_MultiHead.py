@@ -239,7 +239,11 @@ class AlbertAttention(BertSelfAttention):
             causal = True,
             return_attn = True
         )
-        attention_probs = torch.zeros([query_layer.shape[0], query_layer.shape[1], query_layer.shape[3], query_layer.shape[3]], dtype=torch.float)
+        print(query_layer.shape)
+        if query_layer.shape[2] > query_layer.shape[3]:
+            attention_probs = torch.zeros([query_layer.shape[0], query_layer.shape[1], query_layer.shape[2], query_layer.shape[2]], dtype=torch.float)
+        else:
+            attention_probs = torch.zeros([query_layer.shape[0], query_layer.shape[1], query_layer.shape[3], query_layer.shape[3]], dtype=torch.float)
         context_layer = torch.zeros(query_layer.shape, dtype=torch.float)
         #context_layer.to(device="cuda")
         #buckets = torch.zeros(query_layer.shape, dtype=torch.float)
