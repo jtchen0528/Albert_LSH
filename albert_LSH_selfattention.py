@@ -26,7 +26,7 @@ from .configuration_albert import AlbertConfig
 from .file_utils import add_start_docstrings, add_start_docstrings_to_callable
 from .modeling_bert import ACT2FN, BertEmbeddings, BertSelfAttention, prune_linear_layer
 from .modeling_utils import PreTrainedModel
-from reformer_pytorch import LSHAttention
+from reformer_pytorch import LSHSelfAttention
 
 
 logger = logging.getLogger(__name__)
@@ -224,44 +224,28 @@ class AlbertAttention(BertSelfAttention):
         mixed_value_layer = self.value(input_ids)
 
         query_layer = self.transpose_for_scores(mixed_query_layer)
-        #key_layer = self.transpose_for_scores(mixed_key_layer)
+        key_layer = self.transpose_for_scores(mixed_key_layer)
         value_layer = self.transpose_for_scores(mixed_value_layer)
 
         # Take the dot product between "query" and "key" to get the raw attention scores.
-        #attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
-        #attention_scores = attention_scores / math.sqrt(self.attention_head_size)
-        #if attention_mask is not None:
+        attention_scores = torch.matmul(query_layer, key_layer.transpose(-1, -2))
+        attention_scores = attention_scores / math.sqrt(self.attention_head_size)
+        if attention_mask is not None:
             # Apply the attention mask is (precomputed for all layers in BertModel forward() function)
-            #attention_scores = attention_scores + attention_mask
-        attn = LSHAttention(
-            bucket_size = 32,
-            n_hashes = 16,
-            causal = True,
-            return_attn = True
-        )
-        # print(query_layer.shape)
-        if query_layer.shape[2] > query_layer.shape[3]:
-            attention_probs = torch.zeros([query_layer.shape[0], query_layer.shape[1], query_layer.shape[2], query_layer.shape[2]], dtype=torch.float)
-        else:
-            attention_probs = torch.zeros([query_layer.shape[0], query_layer.shape[1], query_layer.shape[3], query_layer.shape[3]], dtype=torch.float)
-        context_layer = torch.zeros(query_layer.shape, dtype=torch.float)
-        #context_layer.to(device="cuda")
-        #buckets = torch.zeros(query_layer.shape, dtype=torch.float)
-        for i in range(self.num_attention_heads) :
-          context_layer[:,i,:,:], attention_probs[:,i,:,:], buckets = attn(query_layer[:,i,:,:], value_layer[:,i,:,:])
-        context_layer = context_layer.cuda()
+            attention_scores = attention_scores + attention_mask
+
         # Normalize the attention scores to probabilities.
-        #attention_probs = nn.Softmax(dim=-1)(attention_scores)
+        attention_probs = nn.Softmax(dim=-1)(attention_scores)
 
         # This is actually dropping out entire tokens to attend to, which might
         # seem a bit unusual, but is taken from the original Transformer paper.
-        #attention_probs = self.dropout(attention_probs)
+        attention_probs = self.dropout(attention_probs)
 
         # Mask heads if we want to
         if head_mask is not None:
             attention_probs = attention_probs * head_mask
 
-        #context_layer = torch.matmul(attention_probs, value_layer)
+        context_layer = torch.matmul(attention_probs, value_layer)
 
         context_layer = context_layer.permute(0, 2, 1, 3).contiguous()
 
@@ -285,19 +269,25 @@ class AlbertLayer(nn.Module):
 
         self.config = config
         self.full_layer_layer_norm = nn.LayerNorm(config.hidden_size, eps=config.layer_norm_eps)
-        self.attention = AlbertAttention(config)
+        self.attention = LSHSelfAttention(
+                            dim = config.hidden_size,
+                            heads = config.num_attention_heads,
+                            bucket_size = 32,
+                            n_hashes = 16,
+                            causal = False
+                          )
         self.ffn = nn.Linear(config.hidden_size, config.intermediate_size)
         self.ffn_output = nn.Linear(config.intermediate_size, config.hidden_size)
         self.activation = ACT2FN[config.hidden_act]
 
     def forward(self, hidden_states, attention_mask=None, head_mask=None):
-        attention_output = self.attention(hidden_states, attention_mask, head_mask)
-        ffn_output = self.ffn(attention_output[0])
+        attention_output = self.attention(hidden_states, input_attn_mask  = None, input_mask  = None)
+        ffn_output = self.ffn(attention_output)
         ffn_output = self.activation(ffn_output)
         ffn_output = self.ffn_output(ffn_output)
-        hidden_states = self.full_layer_layer_norm(ffn_output + attention_output[0])
+        hidden_states = self.full_layer_layer_norm(ffn_output + attention_output)
 
-        return (hidden_states,) + attention_output[1:]  # add attentions if we output them
+        return (hidden_states,)  # add attentions if we output them
 
 
 class AlbertLayerGroup(nn.Module):
@@ -567,7 +557,7 @@ class AlbertModel(AlbertPreTrainedModel):
             token_type_ids = torch.zeros(input_shape, dtype=torch.long, device=device)
 
         extended_attention_mask = attention_mask.unsqueeze(1).unsqueeze(2)
-        extended_attention_mask = extended_attention_mask.to(dtype=self.dtype)  # fp16 compatibility
+        extended_attention_mask = extended_attention_mask.to(dtype=next(self.parameters()).dtype)  # fp16 compatibility
         extended_attention_mask = (1.0 - extended_attention_mask) * -10000.0
         head_mask = self.get_head_mask(head_mask, self.config.num_hidden_layers)
 
