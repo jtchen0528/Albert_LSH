@@ -30,10 +30,10 @@ We would like to experiment whether it will achieve a better result if the atten
 ## Model selection
 ### Locality Sensitive Hashing
 Locality Sensitive Hashing is an attention mechanism that replaces the original dot-product attention and reduces the former space complexity of  O(N2) to O(N lg N). It randomly permutes Q vectors several rounds and hashes each qi into several buckets. This process finds related qis and computes them into attention matrix with lower cost.
-![snapshot](Files/model.PNG)
+![snapshot](Files/model.png)
 ### Model building
 We connected locality sensitive hashing attention layer on ALBERT structure (fig 1). For training process, we use standard ALBERT pre-train model provided by Google for pre-training, then fine-tune it to specific tasks. The experiment is done on Google Colab with GPU P100.
-![snapshot](Files/train.PNG)
+![snapshot](Files/train.png)
 ## Experiment
 We experiment our model on natural language understanding datasets (GLUE) for confirmation, then, implement the our model on several tasks such as sentence understanding, sequence generation and text classification. We compare our model with ALBERT to identify the benefit of LSH.  
 ## Result
