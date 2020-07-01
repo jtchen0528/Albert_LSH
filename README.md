@@ -1,11 +1,11 @@
 # Locality Sensitive Hashing on ALBERT
-Discuss the impact when locality sensitive hashing from reformer is implemented on ALBERT, a lite BERT.
+Discuss the impact when locality sensitive hashing from reformer is implemented on ALBERT, a lite BERT.  
 ## Installation
 ```
 pip install transformers
 pip install pytorch-reformer
 ```
-replace contents in transformers/modeling_albert.py with contents in ALBERT_LSH.py.
+replace contents in transformers/modeling_albert.py with contents in ALBERT_LSH.py.  
 Run each testset.
 ## run GLUE
 ```
@@ -26,16 +26,23 @@ python run_glue.py \
   --output_dir /tmp/$TASK_NAME/
 ```
 ## Introduction
-We would like to experiment whether it will achieve a better result if the attention layer for ALBERT is replaced by locality sensitive hashing.
+We would like to experiment whether it will achieve a better result if the attention layer for ALBERT is replaced by locality sensitive hashing.  
 ## Model selection
-### Locality Sensitive Hashing
-Locality Sensitive Hashing is an attention mechanism that replaces the original dot-product attention and reduces the former space complexity of  O(N2) to O(N lg N). It randomly permutes Q vectors several rounds and hashes each qi into several buckets. This process finds related qis and computes them into attention matrix with lower cost.
-![snapshot](Files/model.png)
+### Locality Sensitive Hashingd
+Locality Sensitive Hashing is an attention mechanism that replaces the original dot-product attention and reduces the former space complexity of  O(N2) to O(N lg N). It randomly permutes Q vectors several rounds and hashes each qi into several buckets. This process finds related qis and computes them into attention matrix with lower cost.  
+![snapshot](assets/model.png)
 ### Model building
-We connected locality sensitive hashing attention layer on ALBERT structure (fig 1). For training process, we use standard ALBERT pre-train model provided by Google for pre-training, then fine-tune it to specific tasks. The experiment is done on Google Colab with GPU P100.
-![snapshot](Files/train.png)
-## Experiment
-We experiment our model on natural language understanding datasets (GLUE) for confirmation, then, implement the our model on several tasks such as sentence understanding, sequence generation and text classification. We compare our model with ALBERT to identify the benefit of LSH.  
-## Result
-MRPC 81.4%
+We connected locality sensitive hashing attention layer on ALBERT structure (fig 1). For training process, we use standard ALBERT pre-train model provided by Google for pre-training, then fine-tune it to specific tasks. The experiment is done on Google Colab with GPU P100.  
+![snapshot](assets/train.png)
+## Experiments
+### Model Correctness
+We want to know that if locality sensitive hashing works on ALBERT. We train ALBERT-LSH on MRPC with 10 epochs, and we can see that the training loss is converging.   
+![snapshot](assets/training_loss_MRPC_albert_lsh.png)
+### Model Accuracy
+We test ALBERT-LSH on multiple test sets and compare it with ALBERT.  
+![snapshot](assets/accuracy.png)
 ## Conclusion
+Implementing Locality Sensitive Hashing on natural language processing tasks is workable. It reduces space needed for module to compute therefore we can construct a larger module. It is a trade-off between space and time. Our ALBERT_LSH uses less space, but hashing loses some text feature and decreases accuracies. We need further experiments to determine whether our module needs more time to train, or it is already the limit of LSH attention mechanism.  
+## Paperworks
+[Report](files/report_A47.pdf)  
+[Poster](files/poster_A47.pdf)  
