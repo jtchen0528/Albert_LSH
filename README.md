@@ -11,7 +11,7 @@ We would like to experiment whether it will achieve a better result if the atten
 [Poster](files/poster_A47.pdf)   
 [Summary](files/summary_A47.pdf)   
 ## Model selection
-### Locality Sensitive Hashingd
+### Locality Sensitive Hashing
 Locality Sensitive Hashing is an attention mechanism that replaces the original dot-product attention and reduces the former space complexity of  O(N2) to O(N lg N). It randomly permutes Q vectors several rounds and hashes each qi into several buckets. This process finds related qis and computes them into attention matrix with lower cost.  
 ![snapshot](assets/model.png)
 ### Model building
