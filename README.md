@@ -5,7 +5,11 @@ Space computational costs and time complexities are more and more important in t
 the time and space needed for training a language model. Furthermore, Locality Sensitive Hashing attention mechanism also improves on language
 model's space complexity.  
 ## Purpose
-We would like to experiment whether it will achieve a better result if the attention layer for ALBERT is replaced by locality sensitive hashing.  
+We would like to experiment whether it will achieve a better result if the attention layer for ALBERT is replaced by locality sensitive hashing. 
+## Paperworks
+[Report](files/report_A47.pdf)  
+[Poster](files/poster_A47.pdf)   
+[Summary](files/summary_A47.pdf)   
 ## Model selection
 ### Locality Sensitive Hashingd
 Locality Sensitive Hashing is an attention mechanism that replaces the original dot-product attention and reduces the former space complexity of  O(N2) to O(N lg N). It randomly permutes Q vectors several rounds and hashes each qi into several buckets. This process finds related qis and computes them into attention matrix with lower cost.  
@@ -22,9 +26,6 @@ We test ALBERT-LSH on multiple test sets and compare it with ALBERT.
 ![snapshot](assets/accuracy.png)
 ## Conclusion
 Implementing Locality Sensitive Hashing on natural language processing tasks is workable. It reduces space needed for module to compute therefore we can construct a larger module. It is a trade-off between space and time. Our ALBERT_LSH uses less space, but hashing loses some text feature and decreases accuracies. We need further experiments to determine whether our module needs more time to train, or it is already the limit of LSH attention mechanism.  
-## Paperworks
-[Report](files/report_A47.pdf)  
-[Poster](files/poster_A47.pdf)  
 ## Installation
 ```
 pip install transformers
